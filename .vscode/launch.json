@@ -7,8 +7,1000 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug",
-            "program": "${workspaceFolder}/<your program>",
+            "name": "Debug unit tests in library 'bevy_rapier2d'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "bevy_rapier2d",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'boxes2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=boxes2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "boxes2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'boxes2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=boxes2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "boxes2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'contact_filter2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=contact_filter2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "contact_filter2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'contact_filter2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=contact_filter2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "contact_filter2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'custom_system_setup2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=custom_system_setup2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "custom_system_setup2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'custom_system_setup2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=custom_system_setup2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "custom_system_setup2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'debug_despawn2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=debug_despawn2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "debug_despawn2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'debug_despawn2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=debug_despawn2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "debug_despawn2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'despawn2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=despawn2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "despawn2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'despawn2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=despawn2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "despawn2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'events2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=events2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "events2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'events2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=events2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "events2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'joints2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=joints2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "joints2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'joints2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=joints2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "joints2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'joints_despawn2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=joints_despawn2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "joints_despawn2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'joints_despawn2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=joints_despawn2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "joints_despawn2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'locked_rotations2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=locked_rotations2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "locked_rotations2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'locked_rotations2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=locked_rotations2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "locked_rotations2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'multiple_colliders2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=multiple_colliders2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "multiple_colliders2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'multiple_colliders2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=multiple_colliders2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "multiple_colliders2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'player_movement2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=player_movement2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "player_movement2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'player_movement2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=player_movement2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "player_movement2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'rope_joint2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=rope_joint2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "rope_joint2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'rope_joint2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=rope_joint2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "rope_joint2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'testbed2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=testbed2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "testbed2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'testbed2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=testbed2",
+                    "--package=bevy_rapier2d"
+                ],
+                "filter": {
+                    "name": "testbed2",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'bevy_rapier3d'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "bevy_rapier3d",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'boxes3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=boxes3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "boxes3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'boxes3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=boxes3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "boxes3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'contact_filter3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=contact_filter3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "contact_filter3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'contact_filter3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=contact_filter3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "contact_filter3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'custom_system_setup3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=custom_system_setup3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "custom_system_setup3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'custom_system_setup3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=custom_system_setup3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "custom_system_setup3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'debug_despawn3 copy'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=debug_despawn3 copy",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "debug_despawn3 copy",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'debug_despawn3 copy'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=debug_despawn3 copy",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "debug_despawn3 copy",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'despawn3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=despawn3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "despawn3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'despawn3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=despawn3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "despawn3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'events3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=events3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "events3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'events3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=events3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "events3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'joints3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=joints3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "joints3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'joints3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=joints3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "joints3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'joints_despawn3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=joints_despawn3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "joints_despawn3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'joints_despawn3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=joints_despawn3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "joints_despawn3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'locked_rotations3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=locked_rotations3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "locked_rotations3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'locked_rotations3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=locked_rotations3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "locked_rotations3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'multiple_colliders3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=multiple_colliders3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "multiple_colliders3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'multiple_colliders3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=multiple_colliders3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "multiple_colliders3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'ray_casting3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=ray_casting3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "ray_casting3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'ray_casting3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=ray_casting3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "ray_casting3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'static_trimesh3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=static_trimesh3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "static_trimesh3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'static_trimesh3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=static_trimesh3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "static_trimesh3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'testbed3'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=testbed3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "testbed3",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'testbed3'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=testbed3",
+                    "--package=bevy_rapier3d"
+                ],
+                "filter": {
+                    "name": "testbed3",
+                    "kind": "example"
+                }
+            },
             "args": [],
             "cwd": "${workspaceFolder}"
         }
