@@ -1,7 +1,9 @@
 use bevy::{
     input::{mouse::MouseMotion, InputSystem},
+    log::LogPlugin,
     prelude::*,
 };
+use bevy_mod_debugdump::{schedule_graph::settings::Style, schedule_graph_dot};
 use bevy_rapier3d::{control::KinematicCharacterController, prelude::*};
 
 const MOUSE_SENSITIVITY: f32 = 0.3;
@@ -11,24 +13,75 @@ const JUMP_SPEED: f32 = 20.0;
 const GRAVITY: f32 = -9.81;
 
 fn main() {
-    App::new()
-        .insert_resource(ClearColor(Color::srgb(
-            0xF9 as f32 / 255.0,
-            0xF9 as f32 / 255.0,
-            0xFF as f32 / 255.0,
-        )))
-        .init_resource::<MovementInput>()
-        .init_resource::<LookInput>()
-        .add_plugins((
-            DefaultPlugins,
-            RapierPhysicsPlugin::<NoUserData>::default(),
-            RapierDebugRenderPlugin::default(),
-        ))
-        .add_systems(Startup, (setup_player, setup_map))
-        .add_systems(PreUpdate, handle_input.after(InputSystem))
-        .add_systems(Update, player_look)
-        .add_systems(FixedUpdate, player_movement)
-        .run();
+    let mut app = App::new();
+
+    app.add_plugins(DefaultPlugins.build().disable::<LogPlugin>()); // disable LogPlugin so that you can pipe the output directly into `dot -Tsvg`
+    app.insert_resource(ClearColor(Color::srgb(
+        0xF9 as f32 / 255.0,
+        0xF9 as f32 / 255.0,
+        0xFF as f32 / 255.0,
+    )))
+    .init_resource::<MovementInput>()
+    .init_resource::<LookInput>()
+    .add_plugins((
+        RapierPhysicsPlugin::<NoUserData>::default(),
+        RapierDebugRenderPlugin::default(),
+    ))
+    .add_systems(Startup, (setup_player, setup_map))
+    .add_systems(PreUpdate, handle_input.after(InputSystem))
+    .add_systems(Update, player_look)
+    .add_systems(
+        PostUpdate,
+        player_movement
+            .before(bevy_rapier3d::prelude::PhysicsSet::Writeback)
+            .after(bevy_rapier3d::prelude::PhysicsSet::StepSimulation),
+    );
+    let dot = schedule_graph_dot(
+        &mut app,
+        PostUpdate,
+        &bevy_mod_debugdump::schedule_graph::Settings {
+            include_system: Some(Box::new(|system| {
+                let name = system.name();
+                let pretty_name = pretty_type_name::pretty_type_name_str(&name);
+                let name_without_event = name
+                    .trim_start_matches("bevy_ecs::event::Events<")
+                    .trim_end_matches(">::update_system");
+                if name_without_event.starts_with("bevy_render") {
+                    return false;
+                }
+                if name_without_event.starts_with("bevy_pbr") {
+                    return false;
+                }
+                if name_without_event.starts_with("bevy_gizmos") {
+                    return false;
+                }
+                if name_without_event.starts_with("bevy_winit") {
+                    return false;
+                }
+                if name_without_event.starts_with("bevy_sprite") {
+                    return false;
+                }
+                if name_without_event.starts_with("bevy_windows") {
+                    return false;
+                }
+                if name_without_event.starts_with("bevy_core_pipeline") {
+                    return false;
+                }
+                true
+            })),
+            collapse_single_system_sets: false,
+
+            ambiguity_enable: true,
+            ambiguity_enable_on_world: false,
+            include_ambiguity: None,
+
+            prettify_system_names: true,
+            ..default()
+        },
+    );
+    println!("{dot}");
+    //return;
+    app.run();
 }
 
 pub fn setup_player(mut commands: Commands) {
@@ -38,7 +91,8 @@ pub fn setup_player(mut commands: Commands) {
                 transform: Transform::from_xyz(0.0, 5.0, 0.0),
                 ..default()
             },
-            Collider::round_cylinder(0.9, 0.3, 0.2),
+            Collider::capsule_y(0.3, 0.15),
+            //            Collider::round_cylinder(0.9, 0.3, 0.2),
             KinematicCharacterController {
                 custom_mass: Some(5.0),
                 up: Vec3::Y,
@@ -54,7 +108,7 @@ pub fn setup_player(mut commands: Commands) {
                 // Automatically slide down on slopes smaller than 30 degrees.
                 min_slope_slide_angle: 30.0_f32.to_radians(),
                 apply_impulse_to_dynamic_bodies: true,
-                snap_to_ground: None,
+                snap_to_ground: Some(CharacterLength::Relative(0.2)),
                 ..default()
             },
         ))
