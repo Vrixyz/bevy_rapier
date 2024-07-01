@@ -11,6 +11,8 @@ use bevy::{prelude::*, transform::TransformSystem};
 use rapier::dynamics::IntegrationParameters;
 use std::marker::PhantomData;
 
+use super::context::DefaultRapierContext;
+
 /// No specific user-data is associated to the hooks.
 pub type NoUserData = ();
 
@@ -20,8 +22,11 @@ pub type NoUserData = ();
 /// Rapier physics engine.
 pub struct RapierPhysicsPlugin<PhysicsHooks = ()> {
     schedule: Interned<dyn ScheduleLabel>,
-    length_unit: f32,
     default_system_setup: bool,
+    /// Read during [`RapierPhysicsPlugin::build()`],
+    /// to help initializing [`RapierContextInitialization`] resource.
+    /// This will be ignored if that resource already exists.
+    default_world_setup: RapierContextInitialization,
     _phantom: PhantomData<PhysicsHooks>,
 }
 
@@ -37,7 +42,19 @@ where
     /// likely always be 1.0 in 3D. In 2D, this is useful to specify a "pixels-per-meter"
     /// conversion ratio.
     pub fn with_length_unit(mut self, length_unit: f32) -> Self {
-        self.length_unit = length_unit;
+        self.default_world_setup =
+            RapierContextInitialization::InitializeDefaultRapierContext { length_unit };
+        self
+    }
+
+    /// Specifies a default world initialization strategy.
+    ///
+    /// The default is to initialize a [`RapierContext`] with a length unit of 1.
+    pub fn with_default_world(
+        mut self,
+        default_world_initialization: RapierContextInitialization,
+    ) -> Self {
+        self.default_world_setup = default_world_initialization;
         self
     }
 
@@ -56,8 +73,10 @@ where
     #[cfg(feature = "dim2")]
     pub fn pixels_per_meter(pixels_per_meter: f32) -> Self {
         Self {
-            length_unit: pixels_per_meter,
             default_system_setup: true,
+            default_world_setup: RapierContextInitialization::InitializeDefaultRapierContext {
+                length_unit: pixels_per_meter,
+            },
             ..default()
         }
     }
@@ -88,6 +107,10 @@ where
                 )
                     .chain()
                     .in_set(RapierTransformPropagateSet),
+                systems::on_add_entity_with_parent,
+                systems::on_change_world,
+                //
+                systems::sync_removals,
                 #[cfg(all(feature = "dim3", feature = "async-collider"))]
                 systems::init_async_scene_colliders,
                 #[cfg(all(feature = "dim3", feature = "async-collider"))]
@@ -95,9 +118,8 @@ where
                 systems::init_rigid_bodies,
                 systems::init_colliders,
                 systems::init_joints,
-                systems::sync_removals,
-                // Run this here so the folowwing systems do not have a 1 frame delay.
-                apply_deferred,
+                //systems::sync_removals,
+                // Run this here so the following systems do not have a 1 frame delay.
                 systems::apply_scale,
                 systems::apply_collider_user_changes,
                 systems::apply_rigid_body_user_changes,
@@ -127,8 +149,8 @@ impl<PhysicsHooksSystemParam> Default for RapierPhysicsPlugin<PhysicsHooksSystem
     fn default() -> Self {
         Self {
             schedule: PostUpdate.intern(),
-            length_unit: 1.0,
             default_system_setup: true,
+            default_world_setup: default(),
             _phantom: PhantomData,
         }
     }
@@ -181,26 +203,35 @@ where
             .register_type::<SolverGroups>()
             .register_type::<ContactForceEventThreshold>()
             .register_type::<ContactSkin>()
-            .register_type::<Group>();
+            .register_type::<Group>()
+            .register_type::<RapierContextEntityLink>()
+            .register_type::<ColliderDebugColor>()
+            .register_type::<RapierConfiguration>()
+            .register_type::<SimulationToRenderTime>()
+            .register_type::<DefaultRapierContext>()
+            .register_type::<RapierContextInitialization>()
+            .register_type::<ColliderDebugColor>();
 
-        app.insert_resource(SimulationToRenderTime::default())
-            .insert_resource(RapierContext {
-                integration_parameters: IntegrationParameters {
-                    length_unit: self.length_unit,
-                    ..Default::default()
-                },
-                ..Default::default()
-            })
-            .insert_resource(Events::<CollisionEvent>::default())
+        app.insert_resource(Events::<CollisionEvent>::default())
             .insert_resource(Events::<ContactForceEvent>::default())
             .insert_resource(Events::<MassModifiedEvent>::default());
+        let default_world_init = app.world().get_resource::<RapierContextInitialization>();
+        if let Some(world_init) = default_world_init {
+            warn!("RapierPhysicsPlugin added with a default rapier context initialization but a `RapierContextInitialization` was already existing.\
+                the following resource will be used in priority: {:?}", world_init);
+        } else {
+            app.insert_resource(self.default_world_setup.clone());
+        }
 
-        // Insert all of our required resources. Don’t overwrite
-        // the `RapierConfiguration` if it already exists.
-        //
-        // NOTE: be sure to call this after the `.insert_resource(RapierContext)` so we can
-        //       access the length_unit when initializing the RapierConfiguration.
-        app.init_resource::<RapierConfiguration>();
+        app.add_systems(
+            self.schedule,
+            (
+                setup_rapier_configuration,
+                setup_rapier_simulation_to_render_time,
+            )
+                .before(PhysicsSet::SyncBackend),
+        );
+        app.add_systems(PreStartup, insert_default_world);
 
         // Add each set as necessary
         if self.default_system_setup {
@@ -216,7 +247,18 @@ where
             );
 
             // These *must* be in the main schedule currently so that they do not miss events.
-            app.add_systems(PostUpdate, (systems::sync_removals,));
+            /*app.add_systems(
+                PostUpdate,
+                (
+                    // Change any worlds needed before doing any calculations
+                    systems::on_add_entity_with_parent,
+                    systems::on_change_world,
+                    // Make sure to remove any dead bodies after changing_worlds but before everything else
+                    // to avoid it deleting something right after adding it
+                    //systems::sync_removals,
+                )
+                    .chain(),
+            );*/
 
             app.add_systems(
                 self.schedule,
@@ -227,11 +269,12 @@ where
                     Self::get_systems(PhysicsSet::Writeback).in_set(PhysicsSet::Writeback),
                 ),
             );
+            app.init_resource::<TimestepMode>();
 
             // Warn user if the timestep mode isn't in Fixed
             if self.schedule.as_dyn_eq().dyn_eq(FixedUpdate.as_dyn_eq()) {
-                let config = app.world_mut().resource::<RapierConfiguration>();
-                match config.timestep_mode {
+                let config = app.world_mut().resource::<TimestepMode>();
+                match config {
                     TimestepMode::Fixed { .. } => {}
                     mode => {
                         warn!("TimestepMode is set to `{:?}`, it is recommended to use `TimestepMode::Fixed` if you have the physics in `FixedUpdate`", mode);
@@ -239,5 +282,68 @@ where
                 }
             }
         }
+    }
+}
+
+/// Specifies a default configuration for the default `RapierContext`
+///
+/// If [`None`], no world will be initialized, you are responsible of creating and maintaining
+/// a [`RapierContext`] before creating any rapier entities (rigidbodies, colliders, joints),
+/// and as long as any [`RapierContextEntityLink`] has a reference to its [`RapierContext`].
+#[derive(Resource, Debug, Reflect, Clone)]
+pub enum RapierContextInitialization {
+    /// [`RapierPhysicsPlugin`] will not spawn any entity containing [`RapierContext`] automatically.
+    NoAutomaticRapierContext,
+    /// [`RapierPhysicsPlugin`] will spawn an entity containing a [`RapierContext`]
+    /// automatically during [`PreStartup`], with the [`DefaultRapierContext`] marker component.
+    InitializeDefaultRapierContext {
+        /// See [`IntegrationParameters::length_unit`]
+        length_unit: f32,
+    },
+}
+
+impl Default for RapierContextInitialization {
+    fn default() -> Self {
+        RapierContextInitialization::InitializeDefaultRapierContext { length_unit: 1f32 }
+    }
+}
+
+pub fn insert_default_world(
+    mut commands: Commands,
+    initialization_data: Res<RapierContextInitialization>,
+) {
+    match initialization_data.as_ref() {
+        RapierContextInitialization::NoAutomaticRapierContext => {}
+        RapierContextInitialization::InitializeDefaultRapierContext { length_unit } => {
+            commands.spawn((
+                RapierContext {
+                    integration_parameters: IntegrationParameters {
+                        length_unit: *length_unit,
+                        ..default()
+                    },
+                    ..RapierContext::default()
+                },
+                DefaultRapierContext,
+            ));
+        }
+    }
+}
+
+pub fn setup_rapier_configuration(
+    mut commands: Commands,
+    rapier_context: Query<(Entity, &RapierContext), Without<RapierConfiguration>>,
+) {
+    for (e, rapier_context) in rapier_context.iter() {
+        commands.entity(e).insert(RapierConfiguration::new(
+            rapier_context.integration_parameters.length_unit,
+        ));
+    }
+}
+pub fn setup_rapier_simulation_to_render_time(
+    mut commands: Commands,
+    rapier_context: Query<Entity, (With<RapierContext>, Without<SimulationToRenderTime>)>,
+) {
+    for e in rapier_context.iter() {
+        commands.entity(e).insert(SimulationToRenderTime::default());
     }
 }

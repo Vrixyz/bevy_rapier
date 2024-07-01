@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- `RapierContext` is now a `Component`
+  - Rapier now supports multiple worlds.
+  - Migration guide: 
+    - `ResMut<mut RapierContext>` -> `DefaultRapierContextAccessMut`
+    - `Res<RapierContext>` -> `DefaultRapierContextAccess`
+    - `ResMut<RapierConfiguration>` -> `DefaultRapierConfigurationMut`
+    - `Res<RapierConfiguration>` -> `DefaultRapierConfiguration`
+
 ## v0.27.0-rc.1 (18 June 2024)
 
 **This is an update to Rapier 0.20 which includes several stability improvements
