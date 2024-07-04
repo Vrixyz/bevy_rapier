@@ -83,7 +83,8 @@ pub fn custom_bencher(steps: usize, setup: impl Fn(&mut App)) {
         app.update();
         timer_full_update.pause();
         let elapsed_time = timer_full_update.time() as f32;
-        let rc = app.world().resource::<RapierContext>();
+        let world = app.world_mut();
+        let rc = world.query::<&RapierContext>().single(world);
         rapier_step_times.push(rc.pipeline.counters.step_time.time() as f32);
         total_update_times.push(elapsed_time);
     }
