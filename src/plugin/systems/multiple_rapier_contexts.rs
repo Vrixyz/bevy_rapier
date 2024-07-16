@@ -236,7 +236,7 @@ mod test {
                 .with_custom_initialization(RapierContextInitialization::NoAutomaticRapierContext),
         ))
         .insert_resource(TimestepMode::Interpolated {
-            dt: 1.0 / 60.0,
+            dt: 1.0 / 600.0,
             time_scale: 1.0,
             substeps: 2,
         })
@@ -283,7 +283,7 @@ mod test {
             let world = app.world_mut();
             let mut query = world.query::<&RapierContext>();
             let context_with_entities_data = query.get(world, context_with_entities).unwrap();
-            assert_eq!(context_with_entities_data.deleted_colliders.len(), 0);
+            //assert_eq!(context_with_entities_data.deleted_colliders.len(), 0);
 
             let mut stepping = app.world_mut().resource_mut::<Stepping>();
             stepping.continue_frame();
@@ -292,13 +292,12 @@ mod test {
             let world = app.world_mut();
             let mut query = world.query::<&RapierContext>();
             let context_with_entities_data = query.get(world, context_with_entities).unwrap();
+            /*if context_with_entities_data.deleted_colliders.len() != 2 {
+                println!("This will crash! (rapier context: {context_with_entities})")
+            }*/
             if context_with_entities_data.deleted_colliders.len() != 2 {
                 println!("This will crash! (rapier context: {context_with_entities})")
             }
-            if context_with_entities_data.deleted_colliders.len() != 2 {
-                println!("This will crash! (rapier context: {context_with_entities})")
-            }
-            println!("{:?}", context_with_entities_data.colliders);
             let mut stepping = app.world_mut().resource_mut::<Stepping>();
             stepping.continue_frame();
 

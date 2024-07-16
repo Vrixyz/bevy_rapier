@@ -61,7 +61,8 @@ pub fn step_simulation<Hooks>(
                 Some(&mut interpolation_query),
             );
             println!("clear");
-            context.deleted_colliders.clear();
+            // That's the offending line ! This should be within `step_simulation` only if we actually step.
+            // context.deleted_colliders.clear();
         } else {
             context.propagate_modified_body_positions_to_colliders();
         }
