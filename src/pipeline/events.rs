@@ -68,7 +68,9 @@ impl<'a> EventQueue<'a> {
             .get(handle)
             .map(|co| Entity::from_bits(co.user_data as u64))
             .or_else(|| self.deleted_colliders.get(&handle).copied())
-            .expect("Internal error: entity not found for collision event.")
+            .unwrap_or_else(|| {
+                panic!("Internal error: entity not found for collision event with collider handle: {handle:?}.")
+            })
     }
 }
 

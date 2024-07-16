@@ -384,6 +384,7 @@ pub fn init_colliders(
         let Some(context_entity) = context_entity else {
             continue;
         };
+        println!("init collider {entity} for world {context_entity}");
 
         let config = config.get(context_entity).unwrap_or_else(|_| {
             panic!("Failed to retrieve `RapierConfiguration` on entity {context_entity}.")

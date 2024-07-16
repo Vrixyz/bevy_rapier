@@ -289,6 +289,7 @@ impl RapierContext {
                     substep_integration_parameters.dt = dt / (substeps as Real) * time_scale;
 
                     for _ in 0..substeps {
+                        dbg!("execute step");
                         self.pipeline.step(
                             &gravity.into(),
                             &substep_integration_parameters,
