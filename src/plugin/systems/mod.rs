@@ -28,6 +28,7 @@ use bevy::prelude::*;
 /// for scene queries.
 pub fn step_simulation<Hooks>(
     mut context: Query<(
+        Entity,
         &mut RapierContext,
         &RapierConfiguration,
         &mut SimulationToRenderTime,
@@ -44,10 +45,12 @@ pub fn step_simulation<Hooks>(
 {
     let hooks_adapter = BevyPhysicsHooksAdapter::new(hooks.into_inner());
 
-    for (mut context, config, mut sim_to_render_time) in context.iter_mut() {
+    for (entity, mut context, config, mut sim_to_render_time) in context.iter_mut() {
         let context = &mut *context;
 
         if config.physics_pipeline_active {
+            println!("step {entity}");
+            //println!("step {:?}", context.colliders);
             context.step_simulation(
                 config.gravity,
                 *timestep_mode,
@@ -57,6 +60,7 @@ pub fn step_simulation<Hooks>(
                 &mut sim_to_render_time,
                 Some(&mut interpolation_query),
             );
+            println!("clear");
             context.deleted_colliders.clear();
         } else {
             context.propagate_modified_body_positions_to_colliders();

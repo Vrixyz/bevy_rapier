@@ -64,11 +64,18 @@ pub(crate) struct EventQueue<'a> {
 
 impl<'a> EventQueue<'a> {
     fn collider2entity(&self, colliders: &ColliderSet, handle: ColliderHandle) -> Entity {
+        let handle_index = handle.into_raw_parts().0;
         colliders
-            .get(handle)
-            .map(|co| Entity::from_bits(co.user_data as u64))
-            .or_else(|| self.deleted_colliders.get(&handle).copied())
-            .expect("Internal error: entity not found for collision event.")
+            .get_unknown_gen(handle_index)
+            .map(|co| Entity::from_bits(co.0.user_data as u64))
+            .or_else(|| self.deleted_colliders.iter().find_map(|co| if co.0.into_raw_parts().0 == handle_index {
+                Some(*co.1)
+            }else {None}))
+            .unwrap_or_else(|| {
+                println!("{:#?}", colliders);
+                dbg!(&self.deleted_colliders);
+                panic!("Internal error: entity not found for collision event with collider handle: {handle:?}.")
+            })
     }
 }
 

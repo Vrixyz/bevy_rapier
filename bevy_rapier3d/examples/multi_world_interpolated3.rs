@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 use bevy_rapier3d::prelude::*;
 
 const N_WORLDS: usize = 2;
@@ -13,7 +13,7 @@ fn main() {
         .add_plugins((
             DefaultPlugins,
             RapierPhysicsPlugin::<NoUserData>::default()
-                .with_default_world(RapierContextInitialization::NoAutomaticRapierContext),
+                .with_custom_initialization(RapierContextInitialization::NoAutomaticRapierContext),
             RapierDebugRenderPlugin::default(),
         ))
         .insert_resource(TimestepMode::Interpolated {
@@ -25,13 +25,16 @@ fn main() {
             Startup,
             ((create_worlds, setup_physics).chain(), setup_graphics),
         )
-        .add_systems(Update, change_world)
+        .add_systems(
+            Update,
+            change_world, //.run_if(input_just_pressed(KeyCode::KeyC)),
+        )
         .run();
 }
 
 fn create_worlds(mut commands: Commands) {
     for i in 0..N_WORLDS {
-        let mut world = commands.spawn((RapierContext::default(), WorldId(i)));
+        let mut world = commands.spawn(RapierContext::default());
         if i == 0 {
             world.insert(DefaultRapierContext);
         }
@@ -45,9 +48,6 @@ fn setup_graphics(mut commands: Commands) {
         ..Default::default()
     });
 }
-
-#[derive(Component)]
-pub struct WorldId(pub usize);
 
 fn change_world(
     query_context: Query<Entity, With<DefaultRapierContext>>,

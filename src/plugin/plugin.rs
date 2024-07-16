@@ -47,10 +47,8 @@ where
         self
     }
 
-    /// Specifies a default world initialization strategy.
-    ///
-    /// The default is to initialize a [`RapierContext`] with a length unit of 1.
-    pub fn with_default_world(
+    /// Specifies an initialization strategy when the [`App`] starts.
+    pub fn with_custom_initialization(
         mut self,
         default_world_initialization: RapierContextInitialization,
     ) -> Self {
@@ -110,6 +108,7 @@ where
                 systems::on_add_entity_with_parent,
                 systems::on_change_world,
                 systems::sync_removals,
+                apply_deferred,
                 #[cfg(all(feature = "dim3", feature = "async-collider"))]
                 systems::init_async_scene_colliders,
                 #[cfg(all(feature = "dim3", feature = "async-collider"))]
@@ -206,8 +205,7 @@ where
             .register_type::<RapierConfiguration>()
             .register_type::<SimulationToRenderTime>()
             .register_type::<DefaultRapierContext>()
-            .register_type::<RapierContextInitialization>()
-            .register_type::<ColliderDebugColor>();
+            .register_type::<RapierContextInitialization>();
 
         app.insert_resource(Events::<CollisionEvent>::default())
             .insert_resource(Events::<ContactForceEvent>::default())
@@ -215,7 +213,7 @@ where
         let default_world_init = app.world().get_resource::<RapierContextInitialization>();
         if let Some(world_init) = default_world_init {
             warn!("RapierPhysicsPlugin added but a `RapierContextInitialization` resource was already existing.\
-            This might overwrite previous configuration made via `RapierPhysicsPlugin::with_default_world`\
+            This will overwrite previous configuration made via `RapierPhysicsPlugin::with_custom_initialization`\
             or `RapierPhysicsPlugin::with_length_unit`.
             The following resource will be used: {:?}", world_init);
         } else {
