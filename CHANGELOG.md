@@ -1,24 +1,63 @@
 # Changelog
 
-## v0.27.0-rc.1 (18 June 2024)
-
-**This is an update to Rapier 0.20 which includes several stability improvements
-and new features. Please have a look at the
-[0.20 changelog](https://github.com/dimforge/rapier/blob/master/CHANGELOG.md) of Rapier.**
+## Unreleased
 
 ### Modified
 
-- Update to rapier `0.20`.
+- Update from rapier `0.21` to rapier `0.22`,
+  see [rapier's changelog](https://github.com/dimforge/rapier/blob/master/CHANGELOG.md).
+
+### Fix
+
+- Fix a crash when using `TimestepMode::Interpolated` and removing colliders
+during a frame which would not run a simulation step.
+
+### Added
+
+- Added a `TriMeshFlags` parameter for `ComputedColliderShape`,
+its default value is `TriMeshFlags::MERGE_DUPLICATE_VERTICES`,
+which was its hardcoded behaviour.
+- Added a way to configure which colliders should be debug rendered: `global` parameter for both 
+  `RapierDebugColliderPlugin` and `DebugRenderContext`, as well as individual collider setup via
+  a `ColliderDebug` component.
+
+### Modified
+
+- `RapierContext`, `RapierConfiguration` and `RenderToSimulationTime` are now a `Component` instead of resources.
+  - Rapier now supports multiple independent physics worlds, see example `multi_world3` for usage details.
+  - Migration guide:
+    - `ResMut<mut RapierContext>` -> `WriteDefaultRapierContext`
+    - `Res<RapierContext>` -> `ReadDefaultRapierContext`
+    - Access to `RapierConfiguration` and `RenderToSimulationTime` should query for it
+on the responsible entity owning the `RenderContext`.
+  - If you are building a library on top of `bevy_rapier` and would want to support multiple independent physics worlds too,
+you can check out the details of [#545](https://github.com/dimforge/bevy_rapier/pull/545)
+to get more context and information.
+
+## v0.27.0 (07 July 2024)
+
+**This is an update from rapier 0.19 to Rapier 0.21 which includes several stability improvements
+and new features. Please have a look at the
+[0.20 and 0.21 changelogs](https://github.com/dimforge/rapier/blob/master/CHANGELOG.md) of Rapier.**
+
+### Modified
+
+- Update from rapier `0.19` to rapier `0.21`.
+- Update to nalgebra `0.33`.
 - Update to bevy `0.14`.
 - Renamed `has_any_active_contacts` to `has_any_active_contact` for better consistency with rapier.
 - `ColliderDebugColor`'s property is now a `bevy::color::Hsla`.
-- Added serialization support for `CollisionGroups`, `SolverGroups`, `ContactForceEventThreshold`, `ContactSkin`.
+- `ImpulseJoint::data` and `MultibodyJoint::data` are now a more detailed enum `TypedJoint` instead of a `GenericJoint`.
+You can still access its inner `GenericJoint` with `.as_ref()` or `as_mut()`.
+- `data` fields from all joints (`FixedJoint`, …) are now public, and their getters removed.
 
 ### Added
 
 - Derive `Debug` for `LockedAxes`.
 - Expose `is_sliding_down_slope` to both `MoveShapeOutput` and `KinematicCharacterControllerOutput`.
 - Added a First Person Shooter `character_controller` example for `bevy_rapier3d`.
+- Added serialization support for `CollisionGroups`, `SolverGroups`, `ContactForceEventThreshold`, `ContactSkin`.
+- Added `RapierContext::context.impulse_revolute_joint_angle` to compute the angle along a revolute joint’s principal axis.
 
 ### Fix
 
@@ -127,14 +166,14 @@ performance of the other parts of the simulation.
 
 - Add a joint for simulating ropes: the `RopeJoint`.
 - Add `Velocity::linear_velocity_at_point` to calculate the linear velocity at the given world-space point.
-- Add the `ComputedColliderShape::ConvexHull` variant to automatcially calculate the convex-hull of an imported mesh.
+- Add the `ComputedColliderShape::ConvexHull` variant to automatically calculate the convex-hull of an imported mesh.
 - Implement `Reflect` for the debug-renderer.
 
 ### Fix
 
 - Fix broken interpolation for rigid-bodies with the `TransformInterpolation` component.
 - Fix compilation when `bevy_rapier` is being used with headless bevy.
-- Improved performance of the writeback system by not iterting on non-rigid-body entities.
+- Improved performance of the writeback system by not iterating on non-rigid-body entities.
 - Fix typo by renaming `CuboidViewMut::sed_half_extents` to `set_half_extents`.
 - Properly scale parented collider’s offset based on changes on its `ColliderScale`.
 
@@ -144,7 +183,7 @@ performance of the other parts of the simulation.
 
 - Update to Bevy 0.10.
 - The `PhysicsHooksWithQuery` trait has been renamed to by the `BevyPhysicsHooks`.
-- Bevy resources and queries accessed by the physics hook are now specified by the implementor of `BevyPhysicsHooks`
+- Bevy resources and queries accessed by the physics hook are now specified by the implementer of `BevyPhysicsHooks`
   which must derive Bevy’s `SystemParam` trait. This implies that the physics hook’s `filter_contact_pair` (and
   all its other methods) no longer take the Bevy `Query` as argument. Queries and resources are accessed through
   `self`.
@@ -435,7 +474,7 @@ Finally, there is now a prelude: `use bevy_rapier2d::prelude::*`.
   is used. It will silently ignore the shape instead.
 - The crate has now a `render` feature that allows building it without any
   rendering support (avoiding some dependencies that may not compile when
-  targetting WASM).
+  targeting WASM).
 
 ## 0.7.0
 
@@ -465,7 +504,7 @@ Finally, there is now a prelude: `use bevy_rapier2d::prelude::*`.
 
 - It is now possible to attach multiple colliders to a single
   rigid-body by using Bevy hierarchy: an entity contains
-  the `RigidBodyBuider` whereas its children contain the `ColliderBuilder`.
+  the `RigidBodyBuilder` whereas its children contain the `ColliderBuilder`.
 
 ### Changed
 
