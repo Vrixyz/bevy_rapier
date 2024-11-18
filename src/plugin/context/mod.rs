@@ -320,6 +320,8 @@ impl RapierContext {
                 let mut substep_integration_parameters = self.integration_parameters;
                 substep_integration_parameters.dt /= substeps as Real;
 
+                dbg!(self.integration_parameters.dt);
+                dbg!(substep_integration_parameters.dt);
                 for _ in 0..substeps {
                     self.pipeline.step(
                         &gravity.into(),
@@ -345,7 +347,8 @@ impl RapierContext {
                 let mut substep_integration_parameters = self.integration_parameters;
                 substep_integration_parameters.dt = dt / (substeps as Real);
 
-                for _ in 0..substeps {
+                dbg!(substep_integration_parameters.dt);
+                for _ in 0..dbg!(substeps) {
                     self.pipeline.step(
                         &gravity.into(),
                         &substep_integration_parameters,
