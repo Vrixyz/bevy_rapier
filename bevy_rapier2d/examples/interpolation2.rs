@@ -1,9 +1,9 @@
 use std::{fs::File, io::Write};
 
-use bevy::prelude::*;
+use bevy::{color::palettes, prelude::*};
 use bevy_mod_debugdump::{schedule_graph, schedule_graph_dot};
 use bevy_rapier2d::prelude::*;
-use bevy_transform_interpolation::{
+use bevy_transform_interpolation::prelude::{
     RotationInterpolation, TransformInterpolationPlugin, TranslationInterpolation,
 };
 
@@ -19,7 +19,7 @@ fn main() {
         time_scale: 1f32,
         substeps: 10,
     })
-    .insert_resource(Time::<Fixed>::from_seconds(0.4))
+    .insert_resource(Time::<Fixed>::from_hz(5.0))
     .add_plugins((
         DefaultPlugins,
         TransformInterpolationPlugin::default(),
@@ -27,6 +27,10 @@ fn main() {
         RapierDebugRenderPlugin::default(),
     ))
     .add_systems(Startup, (setup_graphics, setup_physics));
+    app.add_systems(
+        PostUpdate,
+        debug_with_transform_info.after(TransformSystem::TransformPropagate),
+    );
     let mut debugdump_settings = schedule_graph::Settings::default();
     // Filter out some less relevant systems.
     debugdump_settings.include_system =
@@ -50,6 +54,8 @@ fn main() {
 
     app.run();
 }
+#[derive(Component, Clone)]
+pub struct VisualBallDebug;
 
 pub fn setup_graphics(mut commands: Commands) {
     commands.spawn((Camera2d::default(), Transform::from_xyz(0.0, 20.0, 0.0)));
@@ -67,24 +73,44 @@ pub fn setup_physics(mut commands: Commands) {
         Collider::cuboid(ground_size, ground_height),
     ));
 
-    commands.spawn((
-        Transform::from_xyz(-40.0, 200.0, 0.0),
+    let interpolated_ball = (
+        Transform::from_xyz(-0.0, 200.0, 0.0),
         RigidBody::Dynamic,
         Collider::ball(20.0),
         Restitution {
-            coefficient: 1.0,
+            coefficient: 0.99,
             combine_rule: CoefficientCombineRule::Max,
         },
         TranslationInterpolation,
         RotationInterpolation,
+        VisualBallDebug,
+    );
+    commands.spawn(interpolated_ball.clone());
+    commands.spawn(interpolated_ball).insert((
+        ColliderDebug::NeverRender,
+        Transform::from_xyz(-80.0, 200.0, 0.0),
     ));
     commands.spawn((
-        Transform::from_xyz(40.0, 200.0, 0.0),
+        Transform::from_xyz(80.0, 200.0, 0.0),
         RigidBody::Dynamic,
         Collider::ball(20.0),
         Restitution {
-            coefficient: 1.0,
+            coefficient: 0.99,
             combine_rule: CoefficientCombineRule::Max,
         },
+        VisualBallDebug,
     ));
+}
+
+pub fn debug_with_transform_info(
+    mut gizmos: Gizmos,
+    entities: Query<(&Transform, &Collider), With<VisualBallDebug>>,
+) {
+    for (transform, collider) in entities.iter() {
+        gizmos.circle(
+            transform.translation,
+            collider.as_ball().unwrap().radius(),
+            palettes::basic::RED,
+        );
+    }
 }
