@@ -129,9 +129,14 @@ where
             )
                 .chain()
                 .into_configs(),
-            PhysicsSet::StepSimulation => (systems::step_simulation::<PhysicsHooks>)
-                .in_set(PhysicsSet::StepSimulation)
-                .into_configs(),
+            PhysicsSet::StepSimulation => {
+                #[cfg(feature = "background_simulation")]
+                let systems = (systems::task::handle_tasks);
+
+                #[cfg(not(feature = "background_simulation"))]
+                let systems = systems::step_simulation::<PhysicsHooks>;
+                systems.in_set(PhysicsSet::StepSimulation).into_configs()
+            }
             PhysicsSet::Writeback => (
                 systems::update_colliding_entities,
                 systems::writeback_rigid_bodies,
@@ -140,6 +145,12 @@ where
             )
                 .in_set(PhysicsSet::Writeback)
                 .into_configs(),
+            #[cfg(feature = "background_simulation")]
+            PhysicsSet::StartBackgroundSimulation => {
+                (systems::task::spawn_simulation_task::<PhysicsHooks>,)
+                    .in_set(PhysicsSet::StartBackgroundSimulation)
+                    .into_configs()
+            }
         }
     }
 }
@@ -178,6 +189,9 @@ pub enum PhysicsSet {
     /// components and the [`GlobalTransform`] component.
     /// These systems typically run immediately after [`PhysicsSet::StepSimulation`].
     Writeback,
+    /// The systems responsible for starting the background simulation task.
+    #[cfg(feature = "background_simulation")]
+    StartBackgroundSimulation,
 }
 
 impl<PhysicsHooks> Plugin for RapierPhysicsPlugin<PhysicsHooks>
@@ -242,16 +256,24 @@ where
 
         // Add each set as necessary
         if self.default_system_setup {
-            app.configure_sets(
-                self.schedule,
-                (
-                    PhysicsSet::SyncBackend,
-                    PhysicsSet::StepSimulation,
-                    PhysicsSet::Writeback,
-                )
-                    .chain()
-                    .before(TransformSystem::TransformPropagate),
-            );
+            #[cfg(feature = "background_simulation")]
+            let sets = (
+                PhysicsSet::StepSimulation,
+                PhysicsSet::Writeback,
+                PhysicsSet::SyncBackend,
+                PhysicsSet::StartBackgroundSimulation,
+            )
+                .chain()
+                .before(TransformSystem::TransformPropagate);
+            #[cfg(not(feature = "background_simulation"))]
+            let sets = (
+                PhysicsSet::SyncBackend,
+                PhysicsSet::StepSimulation,
+                PhysicsSet::Writeback,
+            )
+                .chain()
+                .before(TransformSystem::TransformPropagate);
+            app.configure_sets(self.schedule, sets);
             app.configure_sets(
                 self.schedule,
                 RapierTransformPropagateSet.in_set(PhysicsSet::SyncBackend),
@@ -263,6 +285,8 @@ where
                     Self::get_systems(PhysicsSet::SyncBackend),
                     Self::get_systems(PhysicsSet::StepSimulation),
                     Self::get_systems(PhysicsSet::Writeback),
+                    #[cfg(feature = "background_simulation")]
+                    Self::get_systems(PhysicsSet::StartBackgroundSimulation),
                 ),
             );
             app.init_resource::<TimestepMode>();

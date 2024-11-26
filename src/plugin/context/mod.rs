@@ -230,10 +230,7 @@ impl RapierContext {
         &mut self,
         gravity: Vect,
         timestep_mode: TimestepMode,
-        events: Option<(
-            &EventWriter<CollisionEvent>,
-            &EventWriter<ContactForceEvent>,
-        )>,
+        fill_events: bool,
         hooks: &dyn PhysicsHooks,
         time: &Time,
         sim_to_render_time: &mut SimulationToRenderTime,
@@ -241,7 +238,7 @@ impl RapierContext {
             &mut Query<(&RapierRigidBodyHandle, &mut TransformInterpolation)>,
         >,
     ) {
-        let event_queue = if events.is_some() {
+        let event_queue = if fill_events {
             Some(EventQueue {
                 deleted_colliders: &self.deleted_colliders,
                 collision_events: RwLock::new(Vec::new()),

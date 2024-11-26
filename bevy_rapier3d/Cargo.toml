@@ -48,6 +48,7 @@ serde-serialize = ["rapier3d/serde-serialize", "bevy/serialize", "serde"]
 enhanced-determinism = ["rapier3d/enhanced-determinism"]
 headless = []
 async-collider = ["bevy/bevy_asset", "bevy/bevy_scene"]
+background_simulation = []
 
 [dependencies]
 bevy = { version = "0.15.0-rc.2", default-features = false }
@@ -56,6 +57,7 @@ rapier3d = "0.22"
 bitflags = "2.4"
 log = "0.4"
 serde = { version = "1", features = ["derive"], optional = true }
+crossbeam-channel = "0.5"
 
 [dev-dependencies]
 bevy = { version = "0.15.0-rc.3", default-features = false, features = [
@@ -70,6 +72,7 @@ bevy-inspector-egui = "0.28"
 bevy_egui = "0.30.0"
 divan = "0.1"
 bevy_rapier_benches3d = { version = "0.1", path = "../bevy_rapier_benches3d" }
+
 
 [package.metadata.docs.rs]
 # Enable all the features when building the docs on docs.rs

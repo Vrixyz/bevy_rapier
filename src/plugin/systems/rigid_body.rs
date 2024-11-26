@@ -353,7 +353,11 @@ pub fn apply_rigid_body_user_changes(
 /// System responsible for writing the result of the last simulation step into our `bevy_rapier`
 /// components and the [`GlobalTransform`] component.
 pub fn writeback_rigid_bodies(
-    mut context: WriteRapierContext,
+    #[cfg(feature = "background_simulation")] mut context: Query<
+        &mut RapierContext,
+        Without<super::task::SimulationTask>,
+    >,
+    #[cfg(not(feature = "background_simulation"))] mut context: Query<&mut RapierContext>,
     timestep_mode: Res<TimestepMode>,
     config: Query<&RapierConfiguration>,
     sim_to_render_time: Query<&SimulationToRenderTime>,
@@ -374,7 +378,10 @@ pub fn writeback_rigid_bodies(
         }
         let handle = handle.0;
 
-        let context = context.context(link).into_inner();
+        let Ok(context) = context.get_mut(link.0) else {
+            continue;
+        };
+        let context = context.into_inner();
         let sim_to_render_time = sim_to_render_time
             .get(link.0)
             .expect("Could not get `SimulationToRenderTime`");

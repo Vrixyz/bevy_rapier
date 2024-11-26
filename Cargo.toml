@@ -9,7 +9,7 @@ rust.unexpected_cfgs = { level = "warn", check-cfg = [
 
 [profile.dev]
 # Use slightly better optimization by default, as examples otherwise seem laggy.
-opt-level = 1
+# opt-level = 1
 
 [profile.release]
 codegen-units = 1

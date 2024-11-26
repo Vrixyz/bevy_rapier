@@ -8,6 +8,9 @@ mod remove;
 mod rigid_body;
 mod writeback;
 
+#[cfg(feature = "background_simulation")]
+pub mod task;
+
 pub use character_controller::*;
 pub use collider::*;
 pub use joint::*;
@@ -51,7 +54,7 @@ pub fn step_simulation<Hooks>(
             context.step_simulation(
                 config.gravity,
                 *timestep_mode,
-                Some((&collision_events, &contact_force_events)),
+                true,
                 &hooks_adapter,
                 &time,
                 &mut sim_to_render_time,

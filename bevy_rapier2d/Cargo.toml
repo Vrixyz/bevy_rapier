@@ -47,14 +47,20 @@ serde-serialize = ["rapier2d/serde-serialize", "bevy/serialize", "serde"]
 enhanced-determinism = ["rapier2d/enhanced-determinism"]
 headless = []
 async-collider = ["bevy/bevy_asset", "bevy/bevy_scene"]
+background_simulation = []
+profiling = ["rapier2d/profiler"]
 
 [dependencies]
 bevy = { version = "0.15.0-rc.2", default-features = false }
 nalgebra = { version = "0.33", features = ["convert-glam029"] }
-rapier2d = "0.22"
+#rapier2d = { git = "http://github.com/dimforge/rapier", branch = "master" }
+rapier2d = "*"
+profiling = "*"
 bitflags = "2.4"
 log = "0.4"
 serde = { version = "1", features = ["derive"], optional = true }
+crossbeam-channel = "0.5"
+async-std = "*"
 
 [dev-dependencies]
 bevy = { version = "0.15.0-rc.2", default-features = false, features = [
@@ -74,3 +80,7 @@ bevy_transform_interpolation = { git = "https://github.com/Jondolf/bevy_transfor
 [package.metadata.docs.rs]
 # Enable all the features when building the docs on docs.rs
 features = ["debug-render-2d", "serde-serialize"]
+
+[[example]]
+name = "background2"
+required-features = ["background_simulation", "bevy/multi_threaded"]

@@ -9,7 +9,7 @@ use crate::math::{Real, Vect};
 use {crate::prelude::TransformInterpolation, rapier::dynamics::IntegrationParameters};
 
 /// Difference between simulation and rendering time
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Clone, Default, Reflect)]
 pub struct SimulationToRenderTime {
     /// Difference between simulation and rendering time
     pub diff: f32,
