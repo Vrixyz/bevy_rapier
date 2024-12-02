@@ -28,6 +28,6 @@ fn main() {
             }
             true
         }));
-    let dot = schedule_graph_dot(&mut app, PostUpdate, &debugdump_settings);
+    let dot = schedule_graph_dot(&mut app, FixedUpdate, &debugdump_settings);
     println!("{dot}");
 }

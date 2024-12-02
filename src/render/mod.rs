@@ -161,6 +161,20 @@ impl<'world, 'state, 'world2, 'state2, 'a, 'b, 'c, 'v, 'p>
                     };
                 collider_debug == ColliderDebug::AlwaysRender
             }
+            DebugRenderObject::RigidBody(h, ..) => {
+                let Some(collider) = self.context.bodies.get(h) else {
+                    return false;
+                };
+                let entity = Entity::from_bits(collider.user_data as u64);
+
+                let collider_debug =
+                    if let Ok(collider_override) = self.override_visibility.get(entity) {
+                        *collider_override
+                    } else {
+                        self.default_collider_debug
+                    };
+                collider_debug == ColliderDebug::AlwaysRender
+            }
             _ => true,
         }
     }

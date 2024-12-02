@@ -70,6 +70,7 @@ bevy-inspector-egui = "0.28.0"
 bevy_egui = "0.31"
 # bevy_mod_debugdump = "0.11"
 bevy_mod_debugdump = { git = "https://github.com/andriyDev/bevy_mod_debugdump.git", branch = "bevy-0.15" }
+bevy_transform_interpolation = { git = "https://github.com/Jondolf/bevy_transform_interpolation.git" }
 
 [package.metadata.docs.rs]
 # Enable all the features when building the docs on docs.rs
