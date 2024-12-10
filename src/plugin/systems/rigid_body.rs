@@ -428,10 +428,10 @@ pub fn writeback_rigid_bodies(
         }
         let handle = handle.0;
 
-        let rigid_body_set = rigid_body_sets
-            .get_mut(link.0)
-            .expect(RAPIER_CONTEXT_EXPECT_ERROR)
-            .into_inner();
+        let Ok(rigid_body_set) = rigid_body_sets.get_mut(link.0) else {
+            continue;
+        };
+        let rigid_body_set = rigid_body_set.into_inner();
         let sim_to_render_time = sim_to_render_time
             .get(link.0)
             .expect("Could not get `SimulationToRenderTime`");

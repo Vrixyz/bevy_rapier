@@ -50,8 +50,7 @@ serde-serialize = ["rapier2d/serde-serialize", "bevy/serialize", "serde"]
 enhanced-determinism = ["rapier2d/enhanced-determinism"]
 headless = []
 async-collider = ["bevy/bevy_asset", "bevy/bevy_scene"]
-background_simulation = []
-profiling = ["rapier2d/profiler"]
+background_simulation = ["bevy/multi_threaded"]
 
 [dependencies]
 bevy = { version = "0.15", default-features = false }
@@ -64,7 +63,7 @@ bitflags = "2.4"
 log = "0.4"
 serde = { version = "1", features = ["derive"], optional = true }
 crossbeam-channel = "0.5"
-async-std = "*"
+async-std = "1.13"
 
 [dev-dependencies]
 bevy = { version = "0.15", default-features = false, features = [

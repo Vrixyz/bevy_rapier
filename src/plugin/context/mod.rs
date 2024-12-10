@@ -657,7 +657,7 @@ impl RapierQueryPipeline {
 ///
 /// This should be attached on an entity with a [`RapierContextSimulation`]
 #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
-#[derive(Component, Default, Clone)]
+#[derive(Component, Default, Debug, Clone)]
 pub struct RapierRigidBodySet {
     /// The set of rigid-bodies part of the simulation.
     pub bodies: RigidBodySet,

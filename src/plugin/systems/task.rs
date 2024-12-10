@@ -28,6 +28,10 @@ use std::time::Duration;
 use crate::{
     pipeline::{CollisionEvent, ContactForceEvent},
     plugin::context,
+    prelude::{
+        RapierContextColliders, RapierContextJoints, RapierContextSimulation, RapierQueryPipeline,
+        RapierRigidBodySet,
+    },
 };
 use crate::{
     plugin::{RapierConfiguration, RapierContext, SimulationToRenderTime, TimestepMode},
@@ -36,6 +40,14 @@ use crate::{
 use crossbeam_channel::{Receiver, Sender, TryRecvError, TrySendError};
 
 use super::BevyPhysicsHooksAdapter;
+
+pub struct SimulationTaskResult {
+    pub context: RapierContextSimulation,
+    pub bodies: RapierRigidBodySet,
+    pub colliders: RapierContextColliders,
+    pub joints: RapierContextJoints,
+    pub query_pipeline: RapierQueryPipeline,
+}
 
 /// A component that holds a Rapier simulation task.
 ///
@@ -46,7 +58,7 @@ use super::BevyPhysicsHooksAdapter;
 /// This component is removed when it's safe to access the [`RapierContext`] again.
 #[derive(Component)]
 pub struct SimulationTask {
-    pub recv: Receiver<RapierContext>,
+    pub recv: Receiver<SimulationTaskResult>,
 }
 
 /// This system queries for [`RapierContext`] that have our `Task<RapierSimulation>` component. It polls the
@@ -55,7 +67,10 @@ pub struct SimulationTask {
 pub(crate) fn handle_tasks(
     mut commands: Commands,
     mut q_context: Query<(
-        &mut RapierContext,
+        &mut RapierContextSimulation,
+        &mut RapierRigidBodySet,
+        &mut RapierContextColliders,
+        &mut RapierQueryPipeline,
         &RapierConfiguration,
         &mut SimulationToRenderTime,
     )>,
@@ -66,9 +81,19 @@ pub(crate) fn handle_tasks(
     for (entity, mut task) in &mut transform_tasks {
         //if let Some(mut result) = block_on(future::poll_once(&mut task.0)) {
         if let Some(mut result) = task.recv.try_recv().ok() {
-            let (mut context, config, mut sim_to_render_time) = q_context.get_mut(entity).unwrap();
-            // mem::forget(mem::replace(&mut *context, result));
-            mem::swap(&mut *context, &mut result);
+            let (
+                mut context,
+                mut bodies,
+                mut colliders,
+                mut query_pipeline,
+                config,
+                mut sim_to_render_time,
+            ) = q_context.get_mut(entity).unwrap();
+            // TODO: mem swap with a buffer
+            *context = result.context;
+            *bodies = result.bodies;
+            *colliders = result.colliders;
+            *query_pipeline = result.query_pipeline;
             context.send_bevy_events(&mut collision_events, &mut contact_force_events);
             commands.entity(entity).remove::<SimulationTask>();
         }
@@ -84,7 +109,11 @@ pub(crate) fn spawn_simulation_task<Hooks>(
     mut q_context: Query<
         (
             Entity,
-            &mut RapierContext,
+            &mut RapierContextSimulation,
+            &RapierContextColliders,
+            &RapierRigidBodySet,
+            &RapierContextJoints,
+            &RapierQueryPipeline,
             &RapierConfiguration,
             &mut SimulationToRenderTime,
         ),
@@ -100,10 +129,25 @@ pub(crate) fn spawn_simulation_task<Hooks>(
     //let hooks_adapter = BevyPhysicsHooksAdapter::new(hooks.into_inner());
     //let hooks_adapter = BevyPhysicsHooksAdapter::new(());
 
-    for (entity, mut context_ecs, config, sim_to_render_time) in q_context.iter_mut() {
+    for (
+        entity,
+        mut context_ecs,
+        colliders,
+        bodies,
+        joints,
+        query_pipeline,
+        config,
+        sim_to_render_time,
+    ) in q_context.iter_mut()
+    {
         // FIXME: Clone this properly?
-        let mut context = RapierContext::default();
+        let mut context = RapierContextSimulation::default();
         mem::swap(&mut context, &mut *context_ecs);
+        // TODO: use a double buffering system to avoid this more expensive (to verify) cloning.
+        let mut colliders = colliders.clone();
+        let mut bodies = bodies.clone();
+        let mut joints = joints.clone();
+        let mut query_pipeline = query_pipeline.clone();
         // let mut context: RapierContext =
         //    unsafe { mem::transmute_copy::<RapierContext, RapierContext>(&*context_ecs) };
         let config = config.clone();
@@ -120,6 +164,9 @@ pub(crate) fn spawn_simulation_task<Hooks>(
                 if config.physics_pipeline_active {
                     profiling::scope!("Rapier physics simulation");
                     context.step_simulation(
+                        &mut colliders,
+                        &mut joints,
+                        &mut bodies,
                         config.gravity,
                         timestep_mode,
                         true,
@@ -129,14 +176,20 @@ pub(crate) fn spawn_simulation_task<Hooks>(
                         None,
                     );
                 } else {
-                    context.propagate_modified_body_positions_to_colliders();
+                    bodies.propagate_modified_body_positions_to_colliders(&mut colliders);
                 }
 
                 if config.query_pipeline_active {
-                    context.update_query_pipeline();
+                    query_pipeline.update_query_pipeline(&colliders);
                 }
-
-                sender.send(context);
+                let result = SimulationTaskResult {
+                    context,
+                    bodies,
+                    joints,
+                    colliders,
+                    query_pipeline,
+                };
+                sender.send(result);
             })
             .detach();
 
