@@ -13,7 +13,7 @@ mod player_movement2;
 mod rope_joint2;
 
 use bevy::prelude::*;
-use bevy_egui::EguiPlugin;
+use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier2d::prelude::*;
 
@@ -108,6 +108,7 @@ fn main() {
             )
                 .run_if(in_state(Examples::DebugToggle2)),
         )
+        .add_systems(OnExit(Examples::DebugToggle2), cleanup)
         //
         // rope joint
         .add_systems(
@@ -204,11 +205,12 @@ fn main() {
             OnExit(Examples::PlayerMovement2),
             (
                 cleanup,
-                |mut rapier_config: Query<&mut RapierConfiguration>,
-                 ctxt: ReadDefaultRapierContext| {
+                |mut rapier_config: Query<&mut RapierConfiguration>, ctxt: ReadRapierContext| {
                     let mut rapier_config = rapier_config.single_mut();
-                    rapier_config.gravity =
-                        RapierConfiguration::new(ctxt.integration_parameters.length_unit).gravity;
+                    rapier_config.gravity = RapierConfiguration::new(
+                        ctxt.single().simulation.integration_parameters.length_unit,
+                    )
+                    .gravity;
                 },
             ),
         )
@@ -224,7 +226,7 @@ fn main() {
         .add_systems(
             Update,
             (
-                //ui_example_system,
+                ui_example_system,
                 change_example.run_if(resource_changed::<ExampleSelected>),
             )
                 .chain(),
@@ -260,7 +262,7 @@ fn change_example(
 ) {
     next_state.set(examples_available.0[example_selected.0].state);
 }
-/*
+
 fn ui_example_system(
     mut contexts: EguiContexts,
     mut current_example: ResMut<ExampleSelected>,
@@ -284,4 +286,3 @@ fn ui_example_system(
         }
     });
 }
-*/
