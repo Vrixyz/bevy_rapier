@@ -50,24 +50,7 @@ pub enum TimestepMode {
     },
     /// Use a fixed timestep equal to `IntegrationParameters::dt`, but don't step if the
     /// physics simulation advanced by a time greater than the real-world elapsed time multiplied by `time_scale`.
-    SyncWithRender {
-        /// The physics simulation will be advanced by this total amount at each Bevy tick, unless
-        /// the physics simulation time is ahead of a the real time.
-        dt: f32,
-        /// Multiplier controlling if the physics simulation should advance faster (> 1.0),
-        /// at the same speed (= 1.0) or slower (< 1.0) than the real time.
-        time_scale: f32,
-        /// The number of substeps that will be performed whenever the physics simulation is advanced.
-        substeps: usize,
-        // TODO: add a catch back strategy, where if the physics simulation is behind the real time, it should either:
-        // - run again
-        // - run with a higher dt or less substeps
-        // - allow user to customize ?
-        // TODO: add a waiting strategy, where if the physics simulation is ahead of the real time, it should either:
-        // - do nothing: wait for the render to catch up
-        // - run again, then wait for the render to catch up before reading.
-        // - allow user to customize ?
-    },
+    SyncWithRender(SyncWithRenderMode),
 }
 
 impl Default for TimestepMode {
@@ -78,6 +61,34 @@ impl Default for TimestepMode {
             substeps: 1,
         }
     }
+}
+
+/// Use a fixed timestep equal to `IntegrationParameters::dt`, but don't step if the
+/// physics simulation advanced by a time greater than the real-world elapsed time multiplied by `time_scale`.
+#[derive(Reflect, Copy, Clone, Debug, PartialEq, Resource)]
+pub struct SyncWithRenderMode {
+    /// The physics simulation will be advanced by this total amount at each bevy_rapier simulation tick.
+    /// the physics simulation time is ahead of a the real time.
+    pub dt: f32,
+    /// Multiplier controlling if the physics simulation should advance faster (> 1.0),
+    /// at the same speed (= 1.0) or slower (< 1.0) than the real time.
+    pub time_scale: f32,
+    /// The number of substeps that will be performed whenever the physics simulation is advanced.
+    pub substeps: usize,
+    /// Maximum amount of time the physics simulation may be advanced at each bevy_rapier simulation tick.
+    /// If the simulation is behind the real time, it will be run again until it catches up or the max_dt is reached.
+    pub max_total_dt: f32,
+    // TODO: add a catch back strategy, where if the physics simulation is behind the real time, it should either:
+    // - run again
+    // - run with a higher dt or less substeps
+    // - allow user to customize ?
+    //
+    // TODO: add a waiting strategy, where if the physics simulation is ahead of the real time, it should either:
+    // - do nothing: wait for the render to catch up
+    // - run again, then wait for the render to catch up before reading.
+    // - allow user to customize ?
+    // This could be a target_sim_to_render ; where we should starting new when sim_to_render.diff > target_overtime
+    //
 }
 
 #[derive(Component, Copy, Clone, Debug, Reflect)]

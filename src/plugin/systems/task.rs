@@ -103,18 +103,13 @@ pub(crate) fn handle_tasks(
             *bodies = result.bodies;
             *colliders = result.colliders;
             *query_pipeline = result.query_pipeline;
-            sim_to_render_time.diff -= result.simulated_time;
-            sim_to_render_time.diff += (time.elapsed() - task.started_at_render_time).as_secs_f32();
-            if (sim_to_render_time.diff < 0f32) {
-                // The simulation is behind the render time. The simulation slows down,
-                // the strategy to handle this could be to :
-                // - run more steps per simulation frame ( avoiding bevy overhead, synchronization, etc)
-                // - reduce the quality of the simulation (reduce substeps, ccd...)
-                // - allow a time drift: accept the simulation has slowed down, and don't attempt to catch up.
-                // For now, we just reset the diff to 0, effectively allowing a time drift,
-                // but ideally, we should report that to the user.
-                sim_to_render_time.diff = 0f32;
-            }
+            let render_time_elapsed_during_the_simulation =
+                (time.elapsed() - task.started_at_render_time).as_secs_f32();
+            let diff_this_frame =
+                render_time_elapsed_during_the_simulation - dbg!(result.simulated_time);
+            sim_to_render_time.diff += dbg!(diff_this_frame);
+            sim_to_render_time.accumulated_diff += diff_this_frame;
+
             context.send_bevy_events(&mut collision_events, &mut contact_force_events);
             commands.entity(entity).remove::<SimulationTask>();
         };
@@ -171,9 +166,10 @@ pub(crate) fn spawn_simulation_task<Hooks>(
         joints,
         query_pipeline,
         config,
-        sim_to_render_time,
+        mut sim_to_render_time,
     ) in q_context.iter_mut()
     {
+        dbg!("Let's spawn a simulation task");
         // FIXME: Clone this properly?
         let mut context = RapierContextSimulation::default();
         mem::swap(&mut context, &mut *context_ecs);
@@ -187,6 +183,7 @@ pub(crate) fn spawn_simulation_task<Hooks>(
         let config = config.clone();
         let timestep_mode = timestep_mode.clone();
         let time = time.clone();
+
         let mut sim_to_render_time = sim_to_render_time.clone();
 
         let (sender, recv) = crossbeam_channel::unbounded();
@@ -194,29 +191,21 @@ pub(crate) fn spawn_simulation_task<Hooks>(
         let thread_pool = AsyncComputeTaskPool::get();
         let task = thread_pool
             .spawn(async move {
-                async_std::task::sleep(Duration::from_millis(1)).await;
-                let time_to_catch_up = sim_to_render_time.diff;
                 let mut simulated_time = 0f32;
                 if config.physics_pipeline_active {
                     profiling::scope!("Rapier physics simulation");
-                    let max_tries_to_catch_up = 3;
-                    for i in 0..max_tries_to_catch_up {
-                        if time_to_catch_up < simulated_time {
-                            break;
-                        }
-                        simulated_time += context.step_simulation(
-                            &mut colliders,
-                            &mut joints,
-                            &mut bodies,
-                            config.gravity,
-                            timestep_mode,
-                            true,
-                            &(), // FIXME: &hooks_adapter,
-                            &time,
-                            &mut sim_to_render_time,
-                            None,
-                        );
-                    }
+                    simulated_time += context.step_simulation(
+                        &mut colliders,
+                        &mut joints,
+                        &mut bodies,
+                        config.gravity,
+                        timestep_mode,
+                        true,
+                        &(), // FIXME: &hooks_adapter,
+                        &time,
+                        &mut sim_to_render_time,
+                        None,
+                    );
                 } else {
                     bodies.propagate_modified_body_positions_to_colliders(&mut colliders);
                 }
