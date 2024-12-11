@@ -48,6 +48,26 @@ pub enum TimestepMode {
         /// The number of substeps that will be performed whenever the physics simulation is advanced.
         substeps: usize,
     },
+    /// Use a fixed timestep equal to `IntegrationParameters::dt`, but don't step if the
+    /// physics simulation advanced by a time greater than the real-world elapsed time multiplied by `time_scale`.
+    SyncWithRender {
+        /// The physics simulation will be advanced by this total amount at each Bevy tick, unless
+        /// the physics simulation time is ahead of a the real time.
+        dt: f32,
+        /// Multiplier controlling if the physics simulation should advance faster (> 1.0),
+        /// at the same speed (= 1.0) or slower (< 1.0) than the real time.
+        time_scale: f32,
+        /// The number of substeps that will be performed whenever the physics simulation is advanced.
+        substeps: usize,
+        // TODO: add a catch back strategy, where if the physics simulation is behind the real time, it should either:
+        // - run again
+        // - run with a higher dt or less substeps
+        // - allow user to customize ?
+        // TODO: add a waiting strategy, where if the physics simulation is ahead of the real time, it should either:
+        // - do nothing: wait for the render to catch up
+        // - run again, then wait for the render to catch up before reading.
+        // - allow user to customize ?
+    },
 }
 
 impl Default for TimestepMode {

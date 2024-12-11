@@ -209,7 +209,7 @@ mod simulation {
             interpolation_query: Option<
                 &mut Query<(&RapierRigidBodyHandle, &mut TransformInterpolation)>,
             >,
-        ) {
+        ) -> f32 {
             self.simulation.step_simulation(
                 &mut self.colliders,
                 &mut self.joints,

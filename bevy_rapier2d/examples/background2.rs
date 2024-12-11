@@ -2,7 +2,9 @@
 
 use std::{fs::File, io::Write};
 
-use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
+use bevy::color::palettes::css::GOLD;
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
+use bevy::prelude::*;
 use bevy::{color::palettes, prelude::*};
 use bevy_mod_debugdump::{schedule_graph, schedule_graph_dot};
 use bevy_rapier2d::prelude::*;
@@ -26,15 +28,16 @@ fn main() {
     .add_plugins((
         DefaultPlugins,
         FrameTimeDiagnosticsPlugin,
-        LogDiagnosticsPlugin::default(),
         TransformInterpolationPlugin::default(),
         RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0).in_fixed_schedule(),
         RapierDebugRenderPlugin::default(),
     ))
-    .add_systems(Startup, (setup_graphics, setup_physics));
+    .add_systems(Startup, (setup_graphics, setup_physics))
+    .add_systems(Update, fps_text_update_system);
     app.add_systems(
         PostUpdate,
-        debug_with_transform_info.after(TransformSystem::TransformPropagate),
+        (sim_to_render_text_update_system, debug_with_transform_info)
+            .after(TransformSystem::TransformPropagate),
     );
     let mut debugdump_settings = schedule_graph::Settings::default();
     // Filter out some less relevant systems.
@@ -63,6 +66,11 @@ fn main() {
 #[derive(Component, Clone)]
 pub struct VisualBallDebug;
 
+#[derive(Component)]
+struct SimToRenderTimeText;
+#[derive(Component)]
+struct FPSText;
+
 pub fn setup_graphics(mut commands: Commands) {
     commands.spawn((
         Camera2d::default(),
@@ -72,6 +80,68 @@ pub fn setup_graphics(mut commands: Commands) {
         },
         Transform::from_xyz(0.0, 50.0, 0.0),
     ));
+    commands
+        .spawn(Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            justify_content: JustifyContent::SpaceBetween,
+            ..default()
+        })
+        .insert(PickingBehavior::IGNORE)
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new(""),
+                TextFont {
+                    font_size: 42.0,
+                    ..default()
+                },
+                TextColor(GOLD.into()),
+                SimToRenderTimeText,
+            ));
+            parent.spawn((
+                // Create a Text with multiple child spans.
+                Text::new("FPS: "),
+                TextFont {
+                    font_size: 42.0,
+                    ..default()
+                },
+                FPSText,
+            ));
+        });
+}
+
+fn sim_to_render_text_update_system(
+    sim_to_render: Query<&SimulationToRenderTime>,
+    mut query: Query<(&mut TextColor, &mut Text), With<SimToRenderTimeText>>,
+) {
+    let sim_to_render_time = sim_to_render.get_single().unwrap();
+    for (mut color, mut text) in &mut query {
+        text.0 = format!("sim to render: {:.2}", sim_to_render_time.diff);
+        *color = if sim_to_render_time.diff < 0.0 {
+            // simulation is ahead!
+            palettes::basic::GREEN.into()
+        } else {
+            // simulation is behind!
+            palettes::basic::RED.into()
+        };
+    }
+}
+fn fps_text_update_system(
+    diagnostics: Res<DiagnosticsStore>,
+    mut query: Query<(&mut TextColor, &mut Text), With<FPSText>>,
+) {
+    for (mut color, mut text) in &mut query {
+        if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
+            if let Some(value) = fps.smoothed() {
+                text.0 = format!("FPS: {value:.0}");
+                *color = if value > 50.0 {
+                    palettes::basic::GREEN.into()
+                } else {
+                    palettes::basic::RED.into()
+                };
+            }
+        }
+    }
 }
 
 pub fn setup_physics(mut commands: Commands) {
@@ -97,6 +167,7 @@ pub fn setup_physics(mut commands: Commands) {
         VisualBallDebug,
     );
     let ball_column_height = 1000;
+    let ball_column_height = 250;
     for i in 0..ball_column_height {
         let y_offset = i as f32 * 41f32;
         let x_noise_offset = i as f32 / ball_column_height as f32 - 0.5f32;

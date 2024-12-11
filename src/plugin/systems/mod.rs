@@ -70,7 +70,7 @@ pub fn step_simulation<Hooks>(
         let context_colliders = &mut *context_colliders;
 
         if config.physics_pipeline_active {
-            context.step_simulation(
+            let simulated_time = context.step_simulation(
                 context_colliders,
                 &mut joints,
                 &mut rigidbody_set,
@@ -82,6 +82,8 @@ pub fn step_simulation<Hooks>(
                 &mut sim_to_render_time,
                 Some(&mut interpolation_query),
             );
+            sim_to_render_time.diff -= simulated_time;
+            sim_to_render_time.diff += time.delta_secs();
         } else {
             rigidbody_set.propagate_modified_body_positions_to_colliders(context_colliders);
         }

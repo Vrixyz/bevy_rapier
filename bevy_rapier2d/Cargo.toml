@@ -71,6 +71,10 @@ bevy = { version = "0.15", default-features = false, features = [
     "bevy_state",
     "bevy_window",
     "bevy_debug_stepping",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_asset",
+    "default_font",
 ] }
 oorandom = "11"
 approx = "0.5.1"
@@ -86,4 +90,4 @@ features = ["debug-render-2d", "serde-serialize"]
 
 [[example]]
 name = "background2"
-required-features = ["background_simulation", "bevy/multi_threaded"]
+# required-features = ["background_simulation", "bevy/multi_threaded"]

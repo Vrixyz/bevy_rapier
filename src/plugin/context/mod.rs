@@ -37,6 +37,7 @@ use crate::prelude::{
 pub struct SimulationToRenderTime {
     /// Difference between simulation and rendering time
     pub diff: f32,
+    pub accumulated_diff: f32,
 }
 
 /// Marker component for to access the default [`ReadRapierContext`].
@@ -795,7 +796,10 @@ impl Default for RapierContextSimulation {
 
 impl RapierContextSimulation {
     /// Advance the simulation, based on the given timestep mode.
+    ///
+    /// Returns the time in seconds advanced for the simulation.
     #[allow(clippy::too_many_arguments)]
+    #[profiling::function]
     pub fn step_simulation(
         &mut self,
         colliders: &mut RapierContextColliders,
@@ -810,7 +814,8 @@ impl RapierContextSimulation {
         mut interpolation_query: Option<
             &mut Query<(&RapierRigidBodyHandle, &mut TransformInterpolation)>,
         >,
-    ) {
+    ) -> f32 {
+        let mut simulated_time = 0f32;
         let event_queue = if fill_events {
             Some(EventQueue {
                 deleted_colliders: &self.deleted_colliders,
@@ -835,8 +840,7 @@ impl RapierContextSimulation {
                 substeps,
             } => {
                 self.integration_parameters.dt = dt;
-
-                sim_to_render_time.diff += time.delta_secs();
+                simulated_time = dt * time_scale;
 
                 while sim_to_render_time.diff > 0.0 {
                     // NOTE: in this comparison we do the same computations we
@@ -880,12 +884,43 @@ impl RapierContextSimulation {
                     sim_to_render_time.diff -= dt;
                 }
             }
+            TimestepMode::SyncWithRender {
+                dt,
+                time_scale,
+                substeps,
+            } => {
+                self.integration_parameters.dt = dt;
+                simulated_time = dt * time_scale;
+
+                let mut substep_integration_parameters = self.integration_parameters;
+                substep_integration_parameters.dt = dt / (substeps as Real) * time_scale;
+
+                for _ in 0..substeps {
+                    self.pipeline.step(
+                        &gravity.into(),
+                        &substep_integration_parameters,
+                        &mut self.islands,
+                        &mut self.broad_phase,
+                        &mut self.narrow_phase,
+                        &mut rigidbody_set.bodies,
+                        &mut colliders.colliders,
+                        &mut joints.impulse_joints,
+                        &mut joints.multibody_joints,
+                        &mut self.ccd_solver,
+                        None,
+                        hooks,
+                        event_handler,
+                    );
+                    executed_steps += 1;
+                }
+            }
             TimestepMode::Variable {
                 max_dt,
                 time_scale,
                 substeps,
             } => {
-                self.integration_parameters.dt = (time.delta_secs() * time_scale).min(max_dt);
+                simulated_time = (time.delta_secs() * time_scale).min(max_dt);
+                self.integration_parameters.dt = simulated_time;
 
                 let mut substep_integration_parameters = self.integration_parameters;
                 substep_integration_parameters.dt /= substeps as Real;
@@ -947,6 +982,7 @@ impl RapierContextSimulation {
         if executed_steps > 0 {
             self.deleted_colliders.clear();
         }
+        simulated_time
     }
     /// Generates bevy events for any physics interactions that have happened
     /// that are stored in the events list
