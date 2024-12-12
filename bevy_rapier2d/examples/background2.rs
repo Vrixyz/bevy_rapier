@@ -12,7 +12,7 @@ use bevy_rapier2d::prelude::*;
 use bevy_transform_interpolation::prelude::{
     RotationInterpolation, TransformInterpolationPlugin, TranslationInterpolation,
 };
-use configuration::SyncWithRenderMode;
+use configuration::FixedSubsteps;
 
 fn main() {
     let mut app = App::new();
@@ -21,11 +21,11 @@ fn main() {
         0xF9 as f32 / 255.0,
         0xFF as f32 / 255.0,
     )))
-    .insert_resource(TimestepMode::SyncWithRender(SyncWithRenderMode {
-        dt: 1.0 / 60.0,
-        max_total_dt: 1.0 / 60.0 * 3.0,
-        time_scale: 1.0,
-        substeps: 10,
+    .insert_resource(TimestepMode::FixedSubsteps(FixedSubsteps {
+        // target 1 steps per frame if 60 rendering frames per second.
+        // For determinism, substep_dt should never be changed.
+        substep_dt: (1.0 / 60.0) / 1.0,
+        substeps: 1,
     }))
     .insert_resource(Time::<Fixed>::from_hz(60.0))
     .add_plugins((
@@ -105,7 +105,7 @@ pub fn setup_graphics(mut commands: Commands) {
             parent.spawn((
                 Text::new(""),
                 TextFont {
-                    font_size: 42.0,
+                    font_size: 30.0,
                     ..default()
                 },
                 TextColor(GOLD.into()),
@@ -124,25 +124,35 @@ pub fn setup_graphics(mut commands: Commands) {
 }
 
 fn sim_to_render_text_update_system(
-    sim_to_render: Query<&SimulationToRenderTime>,
+    mut time_step_mode: ResMut<TimestepMode>,
+    sim_to_render: Query<(&SimulationToRenderTime, &RapierContextColliders)>,
     mut query: Query<(&mut TextColor, &mut Text), With<SimToRenderTimeText>>,
 ) {
-    let sim_to_render_time = sim_to_render.get_single().unwrap();
+    let TimestepMode::FixedSubsteps(update_strat) = *time_step_mode else {
+        return;
+    };
+    let (sim_to_render_time, colliders) = sim_to_render.get_single().unwrap();
     for (mut color, mut text) in &mut query {
         text.0 = format!(
-            "sim to render: {:.2} ({:.1})",
-            sim_to_render_time.diff, sim_to_render_time.accumulated_diff
-        );
-        text.0 = format!(
-            "accumulated lag: {:.2}",
-            sim_to_render_time.accumulated_diff
+            "real lag to render: {:.2}
+lag taken into account: {:.2}
+nb of frames to simulate physics: {}
+nb of substeps for last physics simulation: {}
+substep deltatime: {:.2}
+amount of entities: {}",
+            sim_to_render_time.diff,
+            sim_to_render_time.accumulated_diff,
+            sim_to_render_time.last_simulation_frame_count,
+            update_strat.substeps,
+            update_strat.substep_dt,
+            colliders.colliders.len()
         );
         *color = if sim_to_render_time.diff < 0.0 {
             // simulation is ahead!
             palettes::basic::GREEN.into()
         } else {
             // simulation is behind!
-            palettes::basic::RED.into()
+            palettes::basic::BLUE.into()
         };
     }
 }
@@ -197,11 +207,11 @@ pub fn setup_physics(mut commands: Commands) {
         ));
         commands.spawn(ball.clone()).insert((
             Transform::from_xyz(0.0 + x_noise_offset, 200.0 + y_offset, 0.0),
-            TranslationInterpolation,
+            //TranslationInterpolation,
         ));
         commands.spawn(ball.clone()).insert((
             Transform::from_xyz(-80.0 + x_noise_offset, 200.0 + y_offset, 0.0),
-            TranslationInterpolation,
+            //TranslationInterpolation,
             ColliderDebug::NeverRender,
         ));
 
@@ -209,13 +219,12 @@ pub fn setup_physics(mut commands: Commands) {
             let x_offset = 80.0 * i as f32;
             commands.spawn(ball.clone()).insert((
                 Transform::from_xyz(-x_offset + x_noise_offset, 200.0 + y_offset, 0.0),
-                TranslationInterpolation,
-                RotationInterpolation,
+                //TranslationInterpolation,
                 ColliderDebug::NeverRender,
             ));
             commands.spawn(ball.clone()).insert((
                 Transform::from_xyz(x_offset + x_noise_offset, 200.0 + y_offset, 0.0),
-                TranslationInterpolation,
+                //TranslationInterpolation,
                 ColliderDebug::NeverRender,
             ));
         }
@@ -242,7 +251,7 @@ pub fn react_before_starting_simulation(
     for mut sim_to_render_time in q_context.iter_mut() {
         profiling::scope!("react_before_starting_simulation");
         dbg!("before starting simulation");
-        if let TimestepMode::SyncWithRender(sync) = &mut *time_step_mode {
+        if let TimestepMode::FixedSubsteps(sync) = &mut *time_step_mode {
             if sim_to_render_time.diff > 0.5f32 {
                 // The simulation is behind the render time. The simulation slows down,
                 // the strategy to handle this could be to :
@@ -253,11 +262,26 @@ pub fn react_before_starting_simulation(
                 // but ideally, we should report that to the user.
                 //dbg!(sim_to_render_time.diff = 0f32);
 
-                sync.max_total_dt = 1.0 / 60.0 * 5f32;
-                sync.substeps = 2;
+                let half_time_to_catch_back = sim_to_render_time.diff / 2f32;
+                if sim_to_render_time.diff > 1f32 {
+                    // Allow a time drift, the simulation is too far behind.
+                    sim_to_render_time.diff = 0f32;
+                }
+                let clamped_substeps_runs =
+                    ((half_time_to_catch_back / sync.substep_dt as f32) as usize).clamp(10, 40);
+                sync.substeps = clamped_substeps_runs;
+                dbg!(sync.substeps);
             } else {
-                sync.max_total_dt = 1.0 / 60.0 * 2f32;
-                sync.substeps = 5;
+                // the physics simulation is ahead of the real time, it should either:
+                // - do nothing: wait for the render to catch up
+                // - run again, then wait for the render to catch up before reading.
+                // - allow user to customize ?
+                // This could be a target_sim_to_render ; where we should starting new when sim_to_render.diff > target_overtime
+
+                // TODO: estimate how many frames it will take to catch up.
+                // If we're not behind, we can expect it to take 1 frame.
+                let time_to_advance = (1.0 / 60.0 + sim_to_render_time.diff).max(0f32);
+                sync.substeps = (time_to_advance / sync.substep_dt) as usize;
             }
         }
     }

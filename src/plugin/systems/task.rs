@@ -27,7 +27,7 @@ use std::time::Duration;
 
 use crate::{
     pipeline::{CollisionEvent, ContactForceEvent},
-    plugin::context,
+    plugin::{context, systems::task},
     prelude::{
         RapierContextColliders, RapierContextJoints, RapierContextSimulation, RapierQueryPipeline,
         RapierRigidBodySet,
@@ -67,7 +67,7 @@ pub struct SimulationTask {
     /// The time at which we started the simulation, as reported by the used render time [`Time::elapsed`].
     pub started_at_render_time: Duration,
     /// Amount of frames elapsed since the simulation started.
-    pub render_frames_elapsed: u64,
+    pub update_frames_elapsed: u32,
     /// The channel end to receive the simulation result.
     pub recv: Receiver<SimulationTaskResult>,
 }
@@ -90,6 +90,8 @@ pub(crate) fn handle_tasks(
     mut contact_force_events: EventWriter<ContactForceEvent>,
 ) {
     for (entity, mut task) in &mut simulation_tasks {
+        task.update_frames_elapsed += 1;
+
         let mut handle_result = |result: SimulationTaskResult| {
             let (
                 mut context,
@@ -109,12 +111,13 @@ pub(crate) fn handle_tasks(
                 render_time_elapsed_during_the_simulation - dbg!(result.simulated_time);
             sim_to_render_time.diff += dbg!(diff_this_frame);
             sim_to_render_time.accumulated_diff += diff_this_frame;
+            sim_to_render_time.last_simulation_frame_count = task.update_frames_elapsed;
 
             context.send_bevy_events(&mut collision_events, &mut contact_force_events);
             commands.entity(entity).remove::<SimulationTask>();
         };
         // TODO: configure this somehow.
-        if task.render_frames_elapsed > 20 {
+        if task.update_frames_elapsed > 60 {
             // Do not tolerate more delay over the rendering: block on the result of the simulation.
             if let Some(result) = task.recv.recv().ok() {
                 handle_result(result);
@@ -125,7 +128,6 @@ pub(crate) fn handle_tasks(
                 handle_result(result);
             }
         }
-        task.render_frames_elapsed += 1;
     }
 }
 
@@ -228,7 +230,7 @@ pub(crate) fn spawn_simulation_task<Hooks>(
         commands.entity(entity).insert(SimulationTask {
             recv,
             started_at_render_time: time.elapsed(),
-            render_frames_elapsed: 0,
+            update_frames_elapsed: 0,
         });
     }
 }

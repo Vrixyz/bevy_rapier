@@ -32,13 +32,17 @@ use crate::prelude::{
     ImpulseJoint, MultibodyJoint, RevoluteJoint, TypedJoint,
 };
 
-use super::configuration::SyncWithRenderMode;
+use super::configuration::FixedSubsteps;
 
 /// Difference between simulation and rendering time
 #[derive(Component, Default, Reflect, Clone)]
 pub struct SimulationToRenderTime {
     /// Difference between simulation and rendering time
     pub diff: f32,
+    /// Amount of frames last simulation took.
+    pub last_simulation_frame_count: u32,
+    /// Difference between simulation and rendering time, never decreasing.
+    /// // TODO: this should be in user space.
     pub accumulated_diff: f32,
 }
 
@@ -890,44 +894,6 @@ impl RapierContextSimulation {
                     sim_to_render_time.diff -= dt;
                 }
             }
-            TimestepMode::SyncWithRender(SyncWithRenderMode {
-                dt,
-                max_total_dt: max_dt,
-                time_scale,
-                substeps,
-            }) => {
-                self.integration_parameters.dt = dt;
-                simulated_time_unscaled = 0.0;
-
-                while sim_to_render_time.diff >= 0.0 && simulated_time_unscaled < max_dt {
-                    simulated_time_unscaled += dt;
-                    profiling::scope!("simulation");
-
-                    let mut substep_integration_parameters = self.integration_parameters;
-                    substep_integration_parameters.dt = dt / (substeps as Real) * time_scale;
-
-                    for _ in 0..substeps {
-                        profiling::scope!("simulation step");
-                        self.pipeline.step(
-                            &gravity.into(),
-                            &substep_integration_parameters,
-                            &mut self.islands,
-                            &mut self.broad_phase,
-                            &mut self.narrow_phase,
-                            &mut rigidbody_set.bodies,
-                            &mut colliders.colliders,
-                            &mut joints.impulse_joints,
-                            &mut joints.multibody_joints,
-                            &mut self.ccd_solver,
-                            None,
-                            hooks,
-                            event_handler,
-                        );
-                        executed_steps += 1;
-                    }
-                    sim_to_render_time.diff -= dt;
-                }
-            }
             TimestepMode::Variable {
                 max_dt,
                 time_scale,
@@ -964,11 +930,42 @@ impl RapierContextSimulation {
             }
             TimestepMode::Fixed { dt, substeps } => {
                 self.integration_parameters.dt = dt;
+                simulated_time_unscaled = dt;
 
                 let mut substep_integration_parameters = self.integration_parameters;
                 substep_integration_parameters.dt = dt / (substeps as Real);
 
                 for _ in 0..substeps {
+                    self.pipeline.step(
+                        &gravity.into(),
+                        &substep_integration_parameters,
+                        &mut self.islands,
+                        &mut self.broad_phase,
+                        &mut self.narrow_phase,
+                        &mut rigidbody_set.bodies,
+                        &mut colliders.colliders,
+                        &mut joints.impulse_joints,
+                        &mut joints.multibody_joints,
+                        &mut self.ccd_solver,
+                        None,
+                        hooks,
+                        event_handler,
+                    );
+                    executed_steps += 1;
+                }
+            }
+            TimestepMode::FixedSubsteps(FixedSubsteps {
+                substep_dt,
+                substeps,
+            }) => {
+                simulated_time_unscaled = substep_dt * substeps as Real;
+                self.integration_parameters.dt = simulated_time_unscaled;
+
+                let mut substep_integration_parameters = self.integration_parameters;
+                substep_integration_parameters.dt = substep_dt as Real;
+
+                for _ in 0..substeps {
+                    profiling::scope!("step");
                     self.pipeline.step(
                         &gravity.into(),
                         &substep_integration_parameters,
