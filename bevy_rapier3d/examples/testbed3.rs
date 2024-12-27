@@ -106,6 +106,7 @@ fn main() {
             )
                 .run_if(in_state(Examples::DebugToggle3)),
         )
+        .add_systems(OnExit(Examples::DebugToggle3), cleanup)
         //
         // despawn
         .init_resource::<despawn3::DespawnResource>()
@@ -209,7 +210,7 @@ fn main() {
         .add_systems(
             Update,
             (
-                //ui_example_system,
+                ui_example_system,
                 change_example.run_if(resource_changed::<ExampleSelected>),
             )
                 .chain(),
@@ -245,7 +246,7 @@ fn change_example(
 ) {
     next_state.set(examples_available.0[example_selected.0].state);
 }
-/*
+
 fn ui_example_system(
     mut contexts: EguiContexts,
     mut current_example: ResMut<ExampleSelected>,
@@ -269,4 +270,3 @@ fn ui_example_system(
         }
     });
 }
-  */

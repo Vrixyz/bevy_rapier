@@ -1,3 +1,5 @@
+//! Components used to configure a simulation run by rapier, these are not modified by bevy_rapier.
+
 use bevy::{
     prelude::{Component, Resource},
     reflect::Reflect,
@@ -7,13 +9,6 @@ use crate::math::{Real, Vect};
 
 #[cfg(doc)]
 use {crate::prelude::TransformInterpolation, rapier::dynamics::IntegrationParameters};
-
-/// Difference between simulation and rendering time
-#[derive(Component, Default, Reflect)]
-pub struct SimulationToRenderTime {
-    /// Difference between simulation and rendering time
-    pub diff: f32,
-}
 
 /// The different ways of adjusting the timestep length each frame.
 #[derive(Copy, Clone, Debug, PartialEq, Resource)]
@@ -26,6 +21,9 @@ pub enum TimestepMode {
         /// This number of substeps of length `dt / substeps` will be performed at each Bevy tick.
         substeps: usize,
     },
+    /// Use a fixed timestep with a better control over substep simulation: the physics simulation will be advanced by the fixed value
+    /// `substep_dt * substeps` seconds at each Bevy tick by performing `substeps` of length `substep_dt`.
+    FixedSubsteps(FixedSubsteps),
     /// Use a variable timestep: the physics simulation will be advanced by the variable value
     /// `min(max_dt, Time::delta_seconds() * time_scale)` seconds at each Bevy tick. If
     /// `time_scale > 1.0` then the simulation will appear to run faster than real-time whereas
@@ -63,6 +61,16 @@ impl Default for TimestepMode {
             substeps: 1,
         }
     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// Use a fixed timestep with a better control over substep simulation: the physics simulation will be advanced by the fixed value
+/// `substep_dt * substeps` seconds at each Bevy tick by performing `substeps` of length `substep_dt`.
+pub struct FixedSubsteps {
+    /// The physics simulation will be advanced by each substep.
+    pub substep_dt: f32,
+    /// This number of substeps of length `dt` will be performed at each simulation tick.
+    pub substeps: usize,
 }
 
 #[derive(Component, Copy, Clone, Debug, Reflect)]
