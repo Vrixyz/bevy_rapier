@@ -72,12 +72,12 @@ pub struct SimulationTask {
     pub recv: Receiver<SimulationTaskResult>,
 }
 
-/// This system queries for [`RapierContext`] that have our `Task<RapierSimulation>` component. It polls the
-/// tasks to see if they're complete. If the task is complete it sends rapier'sbevy events and
+/// This system queries for [`RapierContext`] that have our [`SimulationTask`] component. It polls the
+/// tasks to see if they're complete. If the task is complete it sends rapier's bevy events and
 /// removes the [`SimulationTask`] component from the entity.
 pub(crate) fn handle_tasks(
     mut commands: Commands,
-    mut time: Res<Time>,
+    time: Res<Time>,
     mut q_context: Query<(
         &mut RapierContextSimulation,
         &mut RapierRigidBodySet,
@@ -123,7 +123,6 @@ pub(crate) fn handle_tasks(
                 handle_result(result);
             }
         } else {
-            //if let Some(mut result) = block_on(future::poll_once(&mut task.0)) {
             if let Some(result) = task.recv.try_recv().ok() {
                 handle_result(result);
             }
@@ -134,7 +133,7 @@ pub(crate) fn handle_tasks(
 /// This system generates tasks simulating computationally intensive
 /// work that potentially spans multiple frames/ticks. A separate
 /// system, [`handle_tasks`], will poll the spawned tasks on subsequent
-/// frames/ticks, and use the results to spawn cubes
+/// frames/ticks, and use the results update the physics state.
 pub(crate) fn spawn_simulation_task<Hooks>(
     mut commands: Commands,
     mut q_context: Query<
@@ -168,7 +167,7 @@ pub(crate) fn spawn_simulation_task<Hooks>(
         joints,
         query_pipeline,
         config,
-        mut sim_to_render_time,
+        sim_to_render_time,
     ) in q_context.iter_mut()
     {
         dbg!("Let's spawn a simulation task");
@@ -191,7 +190,7 @@ pub(crate) fn spawn_simulation_task<Hooks>(
         let (sender, recv) = crossbeam_channel::unbounded();
 
         let thread_pool = AsyncComputeTaskPool::get();
-        let task = thread_pool
+        thread_pool
             .spawn(async move {
                 let mut simulated_time = 0f32;
                 if config.physics_pipeline_active {
@@ -223,7 +222,7 @@ pub(crate) fn spawn_simulation_task<Hooks>(
                     query_pipeline,
                     simulated_time: simulated_time,
                 };
-                sender.send(result);
+                let _ = sender.send(result);
             })
             .detach();
 
